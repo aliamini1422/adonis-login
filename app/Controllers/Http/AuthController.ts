@@ -7,36 +7,92 @@ export default class AuthController {
 
   }
 
-  public async register({request}: HttpContextContract) {
+  public async register({request, response}: HttpContextContract) {
     const validation = schema.create({
       email: schema.string([
         rules.email(),
         rules.unique({table: 'users', column: 'email'})
 
       ]),
-
       password: schema.string([
         rules.unique({table: 'users', column: 'password'})
-      ])
+      ]),
 
+      code: schema.string.optional()
 
     })
+    let user
+    try {
+      const data = await request.validate({schema: validation})
+      user = await User.create(data)
 
-    const data = await request.validate({schema: validation})
+    } catch (e) {
+      return response.status(403).send("ایمیل قبلا استفاده شده است")
+    }
 
-    const user = await User.create(data)
+    return response.created(user)
+  }
+
+
+  public async login({request, auth, response}: HttpContextContract) {
+
+    const email = request.input('email')
+    const password = request.input('password')
+    let token
+    try {
+      token = await auth.attempt(email, password)
+    } catch (e) {
+      if (e.responseText === "E_INVALID_AUTH_PASSWORD: Password mis-match") {
+        return response.status(401).send("پسورد مطابقت ندارد")
+      } else if (e.responseText === "E_INVALID_AUTH_UID: User not found") {
+        return response.status(404).send("کاربری با این مشخصات وجود ندارد")
+      }
+      return response.send("مشکلی پیش امده لطفا دوباره امتحان کنید")
+    }
+
+    return response.ok({
+      user: auth.user,
+      token: token.token
+    })
+  }
+
+  public async logout({auth}: HttpContextContract) {
+    try {
+      await auth.logout()
+
+    } catch (e) {
+
+    }
+
+    return auth.isLoggedOut
+  }
+
+
+  public async passwordReset({request, response}: HttpContextContract) {
+    const email = request.input('email')
+    const newPassword = request.input('password')
+
+    const user = await User.findByOrFail('email', email)
+
+    if (!user) {
+      return response.notFound("کاربری با این ایمیل یافت نشد")
+    }
+    user.password = newPassword
+
+    await user.save()
 
     return user
   }
 
+  public async delete({params, response}: HttpContextContract){
+    try {
+      const user = await User.findByOrFail('id', params.id)
+      await user.delete()
 
-  public async login({request, auth}: HttpContextContract) {
+    }catch (e) {
+        return response.notFound("کاربر یافت نشد")
+    }
 
-    const email = request.input('email')
-    const password = request.input('password')
-
-    const {token} = await auth.attempt(email, password)
-
-    return token
+    return response.status(200).ok("اکانت با موفقیت پاک شد")
   }
 }

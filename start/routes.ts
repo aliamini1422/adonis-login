@@ -19,18 +19,20 @@
 */
 
 import Route from '@ioc:Adonis/Core/Route'
-import {HttpContextContract} from "@ioc:Adonis/Core/HttpContext";
-
-Route.get('test',({response}:HttpContextContract)=>{
-  console.log('sdjhgsdhjgfsdjhgfsjh')
-  return response.ok('aaaaa')
-})
-
+// import {HttpContextContract} from "@ioc:Adonis/Core/HttpContext";
 
 Route.group(()=>{
+
+  Route.post('/', 'AuthController.index')
 
   Route.post('/login', 'AuthController.login')
 
   Route.post('/register', 'AuthController.register')
+
+  Route.post('/logout', 'AuthController.logout')
+
+  Route.put('/password-reset', 'AuthController.passwordReset')
+
+  Route.delete('/delete/:id', 'AuthController.delete')
 
 }).prefix('/api')
