@@ -36,26 +36,30 @@ export default class AuthController {
   }
 
 
-  public async login({request, auth, response}: HttpContextContract) {
+  public async login({ request, auth }: HttpContextContract) {
 
     const email = request.input('email')
     const password = request.input('password')
-    let token
-    try {
-      token = await auth.attempt(email, password)
-    } catch (e) {
-      if (e.responseText === "E_INVALID_AUTH_PASSWORD: Password mis-match") {
-        return response.status(401).send("پسورد مطابقت ندارد")
-      } else if (e.responseText === "E_INVALID_AUTH_UID: User not found") {
-        return response.status(404).send("کاربری با این مشخصات وجود ندارد")
-      }
-      return response.send("مشکلی پیش امده لطفا دوباره امتحان کنید")
-    }
+    await auth.attempt(email, password)
 
-    return response.ok({
-      user: auth.user,
-      token: token.token
-    })
+    return await auth.attempt(email, password)
+
+    // try {
+    //   token = await auth.attempt(email, password)
+    // } catch (e) {
+    //   console.log(e)
+    //   if (e.responseText === "E_INVALID_AUTH_PASSWORD: Password mis-match") {
+    //     return response.status(401).send("پسورد مطابقت ندارد")
+    //   } else if (e.responseText === "E_INVALID_AUTH_UID: User not found") {
+    //     return response.status(404).send("کاربری با این مشخصات وجود ندارد")
+    //   }
+    //   return response.send("مشکلی پیش امده لطفا دوباره امتحان کنید")
+    // }
+
+    // return response.ok({
+    //   user: auth.user,
+    //   token: token.token
+    // })
   }
 
   public async logout({auth}: HttpContextContract) {
