@@ -35,4 +35,13 @@ Route.group(()=>{
 
   Route.delete('/delete/:id', 'AuthController.delete')
 
+  Route.get('/google/redirect', async ({ ally }) => {
+    return ally.use('google').redirect()
+  })
+
 }).prefix('/api')
+
+
+Route.get('/google/callback', 'AuthController.signupWithGoogle')
+
+

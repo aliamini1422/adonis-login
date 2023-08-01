@@ -21,7 +21,9 @@ export default class AuthController {
       code: schema.string.optional()
 
     })
+
     let user
+
     try {
       const data = await request.validate({schema: validation})
       user = await User.create(data)
@@ -57,12 +59,7 @@ export default class AuthController {
   }
 
   public async logout({auth}: HttpContextContract) {
-    try {
-      await auth.logout()
-
-    } catch (e) {
-
-    }
+    await auth.logout()
 
     return auth.isLoggedOut
   }
@@ -84,15 +81,51 @@ export default class AuthController {
     return user
   }
 
-  public async delete({params, response}: HttpContextContract){
+  public async delete({params, response}: HttpContextContract) {
     try {
       const user = await User.findByOrFail('id', params.id)
       await user.delete()
-
-    }catch (e) {
-        return response.notFound("کاربر یافت نشد")
+    } catch (e) {
+      return response.notFound("کاربر یافت نشد")
     }
 
     return response.status(200).ok("اکانت با موفقیت پاک شد")
+  }
+
+
+  public async signupWithGoogle({ ally }){
+    const google = ally.use('google').stateless()
+
+    /**
+     * User has explicitly denied the login request
+     */
+    if (google.accessDenied()) {
+      return 'Access was denied'
+    }
+
+    /**
+     * Unable to verify the CSRF state
+     */
+    if (google.stateMisMatch()) {
+      return 'Request expired. Retry again'
+    }
+
+    /**
+     * There was an unknown error during the redirect
+     */
+    if (google.hasError()) {
+      return google.getError()
+    }
+
+    /**
+     * Finally, access the user
+     */
+    const user = await google.user()
+      await User.create({
+        'email':user.email,
+        'password': '123456'
+      })
+
+    // return "user Created with password:123456"
   }
 }
